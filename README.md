@@ -130,72 +130,97 @@
 const GEMINI_API_KEY = "AIzaSyDuQdqEJQnh4a6tuNXPbpNyLSdEl16aUbc";
 
 function getRepoDetails(url){
+  if(!url.includes("github.com")) throw "Invalid URL";
   const p = url.replace("https://github.com/","").split("/");
   return { owner:p[0], repo:p[1] };
 }
 
 async function fetchRepoData(owner, repo){
-  const r = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
-  const repoData = await r.json();
-  const c = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits`);
-  const commits = await c.json();
-  const l = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
-  const langs = await l.json();
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    headers: { "Accept": "application/vnd.github.v3+json" }
+  });
+  const data = await res.json();
+
+  if(data.message) throw data.message;
+
   return {
-    description: repoData.description || "No description",
-    commits: commits.length,
-    languages: Object.keys(langs)
+    name: data.name,
+    description: data.description || "No description",
+    stars: data.stargazers_count,
+    forks: data.forks_count,
+    language: data.language || "Unknown",
+    size: data.size,
+    updated: data.updated_at
   };
 }
 
-function calculateScore(data){
-  let s = 0;
-  if(data.commits > 20) s += 30;
-  else if(data.commits > 5) s += 20;
-  else s += 10;
-  if(data.languages.length > 1) s += 20;
-  if(data.description !== "No description") s += 15;
-  return s;
+function calculateScore(d){
+  let score = 0;
+  if(d.description !== "No description") score += 20;
+  if(d.stars > 0) score += 20;
+  if(d.forks > 0) score += 10;
+  if(d.size > 100) score += 20;
+  if(d.language !== "Unknown") score += 20;
+  return score;
 }
 
 async function generateAI(data){
-  const prompt = `You are a senior software mentor.
-Analyze this GitHub repository.
+  if(!GEMINI_API_KEY || GEMINI_API_KEY.includes("AIzaSyDuQdqEJQnh4a6tuNXPbpNyLSdEl16aUbc"))
+    return "AI disabled. Add API key to enable mentor feedback.";
 
-Commits: ${data.commits}
-Languages: ${data.languages.join(", ")}
+  const prompt = `
+Evaluate this GitHub project as a senior software mentor.
+
+Project: ${data.name}
+Language: ${data.language}
+Stars: ${data.stars}
 Description: ${data.description}
 
-Generate a short evaluation summary and a 4-step improvement roadmap.`;
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${AIzaSyDuQdqEJQnh4a6tuNXPbpNyLSdEl16aUbc}`,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ contents:[{ parts:[{ text:prompt }] }] })
-  });
+Give:
+1. Short summary
+2. 4-step improvement roadmap
+`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    }
+  );
+
   const out = await res.json();
-  return out.candidates[0].content.parts[0].text;
+  return out?.candidates?.[0]?.content?.parts?.[0]?.text
+    || "AI feedback unavailable.";
 }
 
 async function analyzeRepo(){
-  const url = document.getElementById("repoUrl").value;
-  document.getElementById("result").innerHTML = "<p class='loading'>Analyzing repository…</p>";
+  const url = document.getElementById("repoUrl").value.trim();
+  const result = document.getElementById("result");
+  result.innerHTML = "<p class='loading'>Analyzing…</p>";
+
   try{
     const {owner,repo} = getRepoDetails(url);
     const data = await fetchRepoData(owner,repo);
     const score = calculateScore(data);
     const ai = await generateAI(data);
-    document.getElementById("result").innerHTML = `
+
+    result.innerHTML = `
       <div class="card">
         <div class="score">${score}/100</div>
-        <div class="badges">
-          <span>${data.commits} Commits</span>
-          ${data.languages.map(l => `<span>${l}</span>`).join("")}
-        </div>
+        <p><b>Project:</b> ${data.name}</p>
+        <p><b>Language:</b> ${data.language}</p>
+        <p><b>Stars:</b> ⭐ ${data.stars}</p>
+        <p><b>Description:</b> ${data.description}</p>
         <h3>AI Evaluation</h3>
         <pre>${ai}</pre>
-      </div>`;
-  }catch(e){
-    document.getElementById("result").innerHTML = "<p>Try again.</p>";
+      </div>
+    `;
+  }catch(err){
+    result.innerHTML = `<p style="color:red;">${err}</p>`;
   }
 }
 </script>
