@@ -166,7 +166,7 @@ function calculateScore(d){
 
 async function generateAI(data){
   if(!GEMINI_API_KEY || GEMINI_API_KEY.includes("AIzaSyDuQdqEJQnh4a6tuNXPbpNyLSdEl16aUbc"))
-    return "AI disabled. Add API key to enable mentor feedback.";
+    return "AI disabled.";
 
   const prompt = `
 Evaluate this GitHub project as a senior software mentor.
