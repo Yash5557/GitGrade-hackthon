@@ -1,7 +1,5 @@
 # GitGrade-hackthon
 
-
-
 <html>
 <head>
   <title>GitHub Repository Analyzer</title>
@@ -117,7 +115,7 @@
 
 <body>
   <div class="container">
-    <h1>AI GitHub Repository Analyzer</h1>
+    <h1>GitHub Repository Analyzer</h1>
     <p class="subtitle">Instant AI-powered evaluation of any GitHub project</p>
 
     <div class="input-box">
@@ -169,7 +167,7 @@ Languages: ${data.languages.join(", ")}
 Description: ${data.description}
 
 Generate a short evaluation summary and a 4-step improvement roadmap.`;
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,{
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${AIzaSyDuQdqEJQnh4a6tuNXPbpNyLSdEl16aUbc}`,{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({ contents:[{ parts:[{ text:prompt }] }] })
@@ -197,7 +195,7 @@ async function analyzeRepo(){
         <pre>${ai}</pre>
       </div>`;
   }catch(e){
-    document.getElementById("result").innerHTML = "<p>Error analyzing repository.</p>";
+    document.getElementById("result").innerHTML = "<p>Try again.</p>";
   }
 }
 </script>
