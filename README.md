@@ -1,7 +1,7 @@
 # GitGrade-hackthon
 
 
-//<!DOCTYPE html>
+
 <html>
 <head>
   <title>GitHub Repository Analyzer</title>
