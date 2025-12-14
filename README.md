@@ -1,26 +1,130 @@
 # GitGrade-hackthon
-
 <!DOCTYPE html>
 <html>
 <head>
   <title>AI GitHub Repository Analyzer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial; background:#f4f6f8; padding:40px; }
-    input { width:360px; padding:10px; }
-    button { padding:10px 20px; cursor:pointer; }
-    #result { margin-top:30px; background:#fff; padding:20px; border-radius:8px; }
-    pre { white-space:pre-wrap; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(135deg, #eef2f7, #dbeafe);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #1f2937;
+    }
+    .container {
+      background: #ffffff;
+      width: 100%;
+      max-width: 820px;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .input-box {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    input {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 16px;
+      outline: none;
+    }
+    input:focus {
+      border-color: #2563eb;
+    }
+    button {
+      padding: 14px 24px;
+      border-radius: 10px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .card {
+      background: #f9fafb;
+      padding: 24px;
+      border-radius: 14px;
+      margin-top: 20px;
+      border: 1px solid #e5e7eb;
+    }
+    .score {
+      font-size: 36px;
+      font-weight: 800;
+      color: #16a34a;
+      margin-bottom: 10px;
+    }
+    .badges span {
+      display: inline-block;
+      background: #e0e7ff;
+      color: #1e3a8a;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    h3 {
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+    pre {
+      background: white;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+    .loading {
+      text-align: center;
+      font-weight: 600;
+      color: #2563eb;
+    }
+    @media(max-width: 600px){
+      .input-box { flex-direction: column; }
+      button { width: 100%; }
+    }
   </style>
 </head>
+
 <body>
+  <div class="container">
+    <h1>AI GitHub Repository Analyzer</h1>
+    <p class="subtitle">Instant AI-powered evaluation of any GitHub project</p>
 
-<h1>AI GitHub Repository Analyzer</h1>
-<p>Paste a public GitHub repository URL</p>
+    <div class="input-box">
+      <input id="repoUrl" placeholder="https://github.com/user/repository">
+      <button onclick="analyzeRepo()">Analyze</button>
+    </div>
 
-<input id="repoUrl" placeholder="https://github.com/user/repo">
-<button onclick="analyzeRepo()">Analyze</button>
-
-<div id="result"></div>
+    <div id="result"></div>
+  </div>
 
 <script>
 const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_API_KEY_HERE";
@@ -45,18 +149,23 @@ async function fetchRepoData(owner, repo){
 }
 
 function calculateScore(data){
-  let s=0;
-  if(data.commits>20) s+=30; else if(data.commits>5) s+=20; else s+=10;
-  if(data.languages.length>1) s+=20;
-  if(data.description!=="No description") s+=15;
+  let s = 0;
+  if(data.commits > 20) s += 30;
+  else if(data.commits > 5) s += 20;
+  else s += 10;
+  if(data.languages.length > 1) s += 20;
+  if(data.description !== "No description") s += 15;
   return s;
 }
 
 async function generateAI(data){
-  const prompt = `You are a senior software mentor. Analyze this GitHub repository.
+  const prompt = `You are a senior software mentor.
+Analyze this GitHub repository.
+
 Commits: ${data.commits}
 Languages: ${data.languages.join(", ")}
 Description: ${data.description}
+
 Generate a short evaluation summary and a 4-step improvement roadmap.`;
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,{
     method:"POST",
@@ -69,20 +178,24 @@ Generate a short evaluation summary and a 4-step improvement roadmap.`;
 
 async function analyzeRepo(){
   const url = document.getElementById("repoUrl").value;
-  document.getElementById("result").innerHTML = "Analyzing...";
+  document.getElementById("result").innerHTML = "<p class='loading'>Analyzing repository…</p>";
   try{
     const {owner,repo} = getRepoDetails(url);
     const data = await fetchRepoData(owner,repo);
     const score = calculateScore(data);
     const ai = await generateAI(data);
     document.getElementById("result").innerHTML = `
-      <h2>Score: ${score}/100</h2>
-      <p><b>Commits:</b> ${data.commits}</p>
-      <p><b>Languages:</b> ${data.languages.join(", ")}</p>
-      <h3>AI Evaluation</h3>
-      <pre>${ai}</pre>`;
+      <div class="card">
+        <div class="score">${score}/100</div>
+        <div class="badges">
+          <span>${data.commits} Commits</span>
+          ${data.languages.map(l => `<span>${l}</span>`).join("")}
+        </div>
+        <h3>AI Evaluation</h3>
+        <pre>${ai}</pre>
+      </div>`;
   }catch(e){
-    document.getElementById("result").innerHTML = "Error analyzing repository.";
+    document.getElementById("result").innerHTML = "<p>Error analyzing repository.</p>";
   }
 }
 </script>
