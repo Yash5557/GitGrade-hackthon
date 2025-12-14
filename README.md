@@ -127,7 +127,7 @@
   </div>
 
 <script>
-const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_API_KEY_HERE";
+const GEMINI_API_KEY = "AIzaSyDuQdqEJQnh4a6tuNXPbpNyLSdEl16aUbc";
 
 function getRepoDetails(url){
   const p = url.replace("https://github.com/","").split("/");
