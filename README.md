@@ -1,8 +1,10 @@
 # GitGrade-hackthon
-<!DOCTYPE html>
+
+
+//<!DOCTYPE html>
 <html>
 <head>
-  <title>AI GitHub Repository Analyzer</title>
+  <title>GitHub Repository Analyzer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     * { box-sizing: border-box; }
